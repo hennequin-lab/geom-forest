@@ -1,0 +1,7 @@
+; Two executables: the figure generator and the snippet typechecker.
+; make_snippets.py writes snippets.ml next to this file, so generate it before
+; building (see README.md).
+(executables
+ (names forest_figures snippets)
+ (modules forest_figures snippets)
+ (libraries geom geom_viz nx rune hugin.gg hugin.vg hugin.font))
