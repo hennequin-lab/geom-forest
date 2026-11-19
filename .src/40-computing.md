@@ -4,8 +4,9 @@
 @@@ aliases: shapes, batching convention
 
 Every value in the library is an ordinary `Nx` tensor whose **last** axis is the
-blade axis, of length $2^n$. The leading axes are batch axes, broadcast exactly
-as everywhere else in `Nx`. So:
+blade axis, of length $2^n$, where $n$ is the dimension of the algebra. The
+leading axes are batch axes, broadcast exactly as everywhere else in `Nx`. So,
+with $B$, $H$ and $W$ standing for an arbitrary batch count, height and width:
 
 ```typst
 "one multivector" &: [|2^n|], quad
@@ -33,9 +34,8 @@ Nx.to_array (Cga.distance2 xs (Cga.point3 0. 0. 0.))
 The packed [[motor]] follows the same convention with last axis 8, so poses
 batch alongside objects and there is no separate batching API. Two consequences
 for the implementation: the algebra is a batched contraction over the last axis
-([[structure-constants]]), and nothing may read a tensor value on the host —
-otherwise batching would be the only thing that works
-([[traced]]).
+([[structure-constants]]), and nothing may read a tensor value on the host — a
+host read would break tracing and differentiable batching ([[traced]]).
 
 @@@ slug: orthonormal-storage
 @@@ title: Store the orthonormal basis, read the null basis
@@ -66,8 +66,8 @@ Nx.item [] (Cga.scalar_prod Cga.einf Cga.einf) (* 0. *)
 
 Points, spheres and planes still have a handful of nonzero coefficients, so the
 product stays sparse; what you give up is the prettiness of printing
-$bold(x) + 1 slash 2 norm(bold(x))^2 e_oo + e_0$. What you keep is a uniform grade
-structure, a xor-indexed product, and one code path for all three models.
+$bold(x) + 1 slash 2 norm(bold(x))^2 e_oo + e_0$. What you keep is a uniform
+grade structure, a xor-indexed product, and one code path for all three models.
 
 PGA needs no such trick: its natural basis $e_1, e_2, e_3, e_0$ is already
 orthogonal, with the last vector squared to zero ([[pga]]). That is one small
@@ -86,9 +86,10 @@ three integers ([[basis-blades]]):
 e_A e_B = epsilon(A, B) m(A, B) e_(A xor B),
 ```
 
-where $epsilon$ is the sign of the reordering, $m$ is the product of the
-$sigma_i$ over the common indices, and the result index is the xor. So the
-whole algebra is a table of $2^n times 2^n$ signed indices, computed once at
+where $A$ and $B$ are bitmask index sets, $epsilon(A, B)$ is the sign of the
+reordering, $m(A, B)$ is the product of the $sigma_i$ over the common indices
+$A inter B$ (the metric factor), and the result index is the bitwise xor. So
+the whole algebra is a table of $2^n times 2^n$ signed indices, computed once at
 module initialisation. For `Cl(4,1)` that is $32 times 32 = 1024$ entries.
 
 ```ocaml
@@ -109,7 +110,9 @@ choice is a performance question rather than a semantic one.
 
 `Blade` owns the table-free part (indices, grades, signs, complements) and
 knows nothing about the metric, which is why it can be shared by all three
-models ([[three-models]]).
+models ([[three-models]]). Note that `Blade.mul_sign` is only the reordering
+sign: the metric factor is applied by the algebra, so a blade whose index sets
+intersect in a null direction gets a zero from `m`, not from the sign.
 
 @@@ slug: traced
 @@@ title: Traced algebra: no host branches
@@ -149,7 +152,8 @@ the small-angle case must be folded into an algebraic expression instead.
 @@@ tags: ga/computing
 @@@ aliases: numerical issues, normalisation
 
-Four failure modes account for most wrong answers.
+Four failure modes account for most wrong answers. They are worth checking in
+this order, because each one can mask the next.
 
 **Scale.** Every object is homogeneous: $S$ and $2 S$ are the same sphere. Fix
 the scale before comparing anything, with the normalisation that belongs to the
@@ -175,9 +179,11 @@ signature; the [[complement]] exists always ([[pga-no-dual]]). A generic `dual`
 routed through both models silently mirrors geometry.
 
 **Degeneracy.** Four coplanar points have a zero wedge, so
-`Cga.sphere_through` returns zero rather than a sphere ([[sphere-through-four]]);
-three collinear points make a zero circle. Check the [[reverse|magnitude]] of a
-constructed object before using it.
+`Cga.sphere_through` returns zero rather than a sphere
+([[sphere-through-four]]). Three collinear points do not vanish: they give a
+flat 2-blade, the line through them, so `circle_radius2` is undefined rather
+than zero. Check the [[reverse|magnitude]] of a constructed object, and its
+[[round-flat|flat/round]] flag, before using it.
 
 ```ocaml
 open Geom
@@ -200,7 +206,7 @@ One functor and three models, plus a packed motion type.
 | module | what it is | where to read the maths |
 | --- | --- | --- |
 | `Blade` | bitmask blades, grades, signs, complements | [[basis-blades]] |
-| `Signature` | $(p,q,r)$, pseudoscalar square | [[signature]] |
+| `Signature` | the metric $(p,q,r)$ — $p$ positive, $q$ negative, $r$ null directions — and the pseudoscalar square | [[signature]] |
 | `Algebra` | the dense functor: products, involutions, duals, norms, sandwich, adjoint | [[geometric-product]], [[hodge-dual]], [[versor]] |
 | `Versor` | `exp`, `log`, `exp_simple`, `slerp` for a dense algebra | [[bivector-exp]] |
 | `Motor` | packed 8-component rigid motions, exp/log, slerp | [[motor]] |
@@ -326,12 +332,14 @@ The camera is not a 4×4 matrix. It is a set of projective objects:
 - `Camera.view c` is the motor carrying world points into camera coordinates;
 - `Camera.eye_point c` is the world-space eye, as a `Pga.t` point;
 - `Camera.image_plane c` is the world-space image plane $z = -f$, as a
-  `Pga.t` plane;
+  `Pga.t` plane, where $f$ is the focal length;
 - a view ray is the `Pga` line through the eye and the page point, and the
   projection of a world point is the **meet** of that ray with the image plane.
 
 The meet performs the perspective division: the coordinates of the resulting
-point are the image coordinates. That is the whole projection.
+point are the image coordinates. In the closed form, with camera-space
+coordinates $(x, y, z)$ of a point and focal length $f$, those coordinates are
+$f x slash (-z)$ and $f y slash (-z)$. That is the whole projection.
 
 ```ocaml
 open Geom
@@ -376,7 +384,7 @@ loop is the pattern of the whole library ([[traced]]).
 @@@ aliases: adapters
 
 The renderer never sees a multivector. Between the algebra and the picture sit
-seven small functions:
+eight small functions:
 
 ```ocaml
 open Geom

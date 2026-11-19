@@ -1,6 +1,6 @@
 # figures-src
 
-`forest_figures.ml` draws the eight SVGs in `../figures/` with
+`forest_figures.ml` draws the fifteen SVGs in `../figures/` with
 [`geom-viz`](../../murder/packages/geom/viz) and prints a table of numerical
 checks. Those numbers are the ones the notes quote, so running it is also a
 correctness check on the prose. The builder inlines the SVGs into the notes

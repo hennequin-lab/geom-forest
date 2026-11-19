@@ -42,7 +42,7 @@ comparison with matrices, quaternions and dual quaternions, and
 
 ## Where the pictures are
 
-[[gallery|The gallery]] collects all eight figures in one page.
+[[gallery|The gallery]] collects all fifteen figures in one page.
 [[viz-model]] explains the renderer, [[camera-pga]] the camera, and
 [[viz-adapters]] the three lines of code that turn a conformal sphere into a
 drawable primitive.

@@ -2,23 +2,25 @@
 id = "b5dd2ed2"
 title = "In a degenerate algebra the dual becomes the complement"
 created = 2026-11-17T18:19:22Z
-updated = 2026-11-17T18:22:27Z
+updated = 2026-11-19T10:27:13Z
 tags = ["ga/foundation"]
 aliases = ["Poincare complement", "complement"]
 +++
 
 The Hodge star needs an invertible [[afad7126|The pseudoscalar is the whole space as one blade]], which a
 [[d26e47d0|degenerate signature]] forbids. What survives is index
-complement: for each blade $e_A$, the blade $e_(A^c)$ whose index set is the
-complement of $A$, signed so that
+complement: for each basis blade $e_A$, the blade $e_(A^c)$ whose index set is
+the complement of $A$ in ${1, dots, n}$, where $n$ is the dimension, signed so
+that
 
 ```typst
-e_A and e_(A^c) = I.
+e_A and e_(A^c) = I,
 ```
 
-That signed permutation of coefficients is the *complement*. It is defined for
-every signature, it is cheap (a gather with precomputed signs), and it is the
-dual that projective geometry actually uses.
+with $I = e_1 dots e_n$ the pseudoscalar. That signed permutation of
+coefficients is the *complement*. It is defined for every signature, it is
+cheap (a gather with precomputed signs), and it is the dual that projective
+geometry actually uses.
 
 ```ocaml
 open Geom

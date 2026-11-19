@@ -27,7 +27,7 @@ out to be a grade selection of it. That claim is unpacked in
 
 If you would rather be told in which order to read, take one of the
 [[reading-paths|four reading paths]]; if you want the flat list,
-[[index|the index of all notes]] is generated from the vault itself. The eight
+[[index|the index of all notes]] is generated from the vault itself. All fifteen
 drawings are collected on [[gallery|the gallery page]].
 
 ## The five ideas worth carrying away
@@ -38,8 +38,10 @@ drawings are collected on [[gallery|the gallery page]].
    object of the algebra the same way, and preserve every incidence relation
    for free.
 3. **In the conformal model, distance is an inner product**
-   ([[conformal-distance]]): $X dot Y = -1 slash 2 norm(bold(x) - bold(y))^2$. Almost
-   everything else in that model is a corollary.
+   ([[conformal-distance]]): for conformal points $X$ and $Y$ representing
+   Euclidean points $bold(x)$ and $bold(y)$,
+   $X dot Y = -1 slash 2 norm(bold(x) - bold(y))^2$. Almost everything else in
+   that model is a corollary.
 4. **A rigid motion needs eight coefficients, not thirty-two** ([[motor]]).
    The packed motor type is a dual quaternion wearing a different hat.
 5. **Geometric predicates are polynomial** ([[polynomial-predicates]]), so they

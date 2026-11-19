@@ -809,6 +809,683 @@ let figure_parabola () =
   Frame.save_svg frame (Filename.concat out_dir "null-parabola.svg");
   Printf.printf "wrote %s/null-parabola.svg\n%!" out_dir
 
+
+(* ─── Figure 9: blades of every grade ─── *)
+
+let figure_grades () =
+  let camera =
+    C.create
+      ~eye:(p3 2.35 (-2.55) 1.95)
+      ~target:(p3 0.35 0.35 0.38)
+      ~up:(p3 0. 0. 1.)
+      ~fov_y:(Float.pi /. 4.7)
+      ~width
+      ~height
+      ()
+  in
+  let o = p3 0. 0. 0. in
+  let u = p3 1.15 0. 0.
+  and v = p3 0. 1.15 0.
+  and w = p3 0. 0. 1.15 in
+  let uv = P.add u v in
+  let add3 a b c = P.add a (P.add b c) in
+  let cube_edges =
+    [ (* bottom square *) (o, u); (u, uv); (uv, v); (v, o)
+    ; (* top square *) (w, P.add w u); (P.add w u, add3 w u v)
+    ; (add3 w u v, P.add w v); (P.add w v, w)
+    ; (* verticals *) (o, w); (u, P.add u w); (uv, add3 u v w); (v, P.add v w)
+    ]
+  in
+  let floor_style =
+    { Draw.fill = Some (Gg.Color.v ~alpha:0.18 0.22 0.45 0.82)
+    ; stroke = Some (Gg.Color.v ~alpha:0.62 0.18 0.30 0.60)
+    ; width = 1.4
+    ; dash = []
+    ; opacity = 1.
+    }
+  in
+  let cube_style = Draw.outline ~width:1.2 (Gg.Color.v ~alpha:0.55 0.20 0.40 0.62) in
+  let entities =
+    [ ground ~size:1.9 (ground_style ~alpha:0.03 ()) ]
+    @ grid ~layer:0 ~size:1.7 ~step:0.4
+    @ [ Draw.static ~layer:1 ~style:floor_style (P.Polygon [ o; u; uv; v ]) ]
+    @ List.map
+        (fun (a, b) -> Draw.static ~layer:2 ~style:cube_style (P.Segment (a, b)))
+        cube_edges
+  in
+  let scene = Draw.create camera entities in
+  let overlay =
+    Vg.Picture.group
+      [ arrow2d ~color:red ~width:2.8 camera o u
+      ; arrow2d ~color:green ~width:2.8 camera o v
+      ; arrow2d ~color:blue ~width:2.8 camera o w
+      ; label ~color:red ~size:14. ~dx:8. ~dy:16. camera u "u"
+      ; label ~color:green ~size:14. ~dx:8. ~dy:(-8.) camera v "v"
+      ; label ~color:blue ~size:14. ~dx:8. ~dy:(-4.) camera w "w"
+      ; label ~color:(Gg.Color.v 0.18 0.24 0.55) ~size:12. ~dx:(-30.) ~dy:(-2.)
+          camera (P.scale uv 0.5) "u ^ v  (grade 2)"
+      ; label ~color:(Gg.Color.v 0.35 0.15 0.40) ~size:12. ~dx:(-48.) ~dy:(-8.)
+          camera (add3 (P.scale u 0.5) (P.scale v 0.5) (P.scale w 1.02))
+          "u ^ v ^ w  (grade 3)"
+      ; label ~color:red ~size:11. ~dx:(-16.) ~dy:(-16.) camera (P.scale u 0.5)
+          "grade 1"
+      ]
+  in
+  save "blade-grades" (Vg.Picture.group [ scene_picture scene; overlay ]);
+  Printf.printf "  grade of e12 / e123            %d / %d\n"
+    (Blade.grade (Blade.of_int 3)) (Blade.grade (Blade.of_int 7))
+
+(* ─── Figure 10: contraction is a quarter turn ─── *)
+
+let figure_contraction () =
+  let camera =
+    C.create
+      ~eye:(p3 0.42 (-0.08) 3.05)
+      ~target:(p3 0.42 0.42 0.)
+      ~up:(p3 0. 1. 0.)
+      ~fov_y:(Float.pi /. 5.2)
+      ~width
+      ~height
+      ()
+  in
+  let o = p3 0. 0. 0.
+  and e1 = p3 1.25 0. 0.
+  and e2 = p3 0. 1.25 0. in
+  let square = P.Polygon [ o; e1; P.add e1 e2; e2 ] in
+  let square_style =
+    { Draw.fill = Some (Gg.Color.v ~alpha:0.14 0.20 0.48 0.80)
+    ; stroke = Some (Gg.Color.v ~alpha:0.55 0.18 0.30 0.58)
+    ; width = 1.2
+    ; dash = []
+    ; opacity = 1.
+    }
+  in
+  let arc =
+    List.init 33 (fun i ->
+      let a = (Float.pi /. 2.) *. float_of_int i /. 32. in
+      p3 (1.25 *. Float.cos a) (1.25 *. Float.sin a) 0.002)
+  in
+  let entities =
+    [ Draw.static ~layer:1 ~style:square_style square ]
+  in
+  let scene = Draw.create camera entities in
+  let overlay =
+    Vg.Picture.group
+      [ polyline3 ~color:violet ~width:1.6 ~dash:[ 5.; 4. ] camera arc
+      ; arrow2d ~color:red ~width:2.8 camera o e1
+      ; arrow2d ~color:green ~width:2.8 camera o e2
+      ; disc ~color:ink ~radius:3.5 camera o
+      ; ring ~color:red ~radius:4.5 camera e1
+      ; ring ~color:green ~radius:4.5 camera e2
+      ; label ~color:red ~size:15. ~dx:8. ~dy:18. camera e1 "e1"
+      ; label ~color:green ~size:15. ~dx:8. ~dy:(-8.) camera e2 "e2"
+      ; label ~color:violet ~size:13. ~dx:(-34.) ~dy:14. camera (p3 0.92 0.18 0.)
+          "e1 . e12 = e2"
+      ; label ~color:(Gg.Color.v 0.18 0.24 0.55) ~size:12. ~dx:(-28.) ~dy:6.
+          camera (p3 0.62 0.62 0.) "the plane e12"
+      ]
+  in
+  save "contraction-quarter-turn" (Vg.Picture.group [ scene_picture scene; overlay ]);
+  Printf.printf "  e1 . e12 / e2 . e12           [%s] / [%s]\n"
+    (String.concat "; "
+       (List.map (Printf.sprintf "%.4g")
+          (Array.to_list
+             (Nx.to_array (E3.inner E3.e1 (E3.op E3.e1 E3.e2))))))
+    (String.concat "; "
+       (List.map (Printf.sprintf "%.4g")
+          (Array.to_list
+             (Nx.to_array (E3.inner E3.e2 (E3.op E3.e1 E3.e2))))))
+
+(* ─── Figure 11: the Hodge dual is the orthogonal complement ─── *)
+
+let figure_dual () =
+  let camera =
+    C.create
+      ~eye:(p3 1.75 (-2.05) 1.85)
+      ~target:(p3 0.42 0.42 0.48)
+      ~up:(p3 0. 0. 1.)
+      ~fov_y:(Float.pi /. 4.8)
+      ~width
+      ~height
+      ()
+  in
+  let o = p3 0. 0. 0.
+  and e1 = p3 1.1 0. 0.
+  and e2 = p3 0. 1.1 0.
+  and e3 = p3 0. 0. 1.25 in
+  let square_style =
+    { Draw.fill = Some (Gg.Color.v ~alpha:0.17 0.20 0.48 0.80)
+    ; stroke = Some (Gg.Color.v ~alpha:0.60 0.18 0.30 0.58)
+    ; width = 1.3
+    ; dash = []
+    ; opacity = 1.
+    }
+  in
+  let entities =
+    [ ground ~size:1.8 (ground_style ~alpha:0.03 ()) ]
+    @ grid ~layer:0 ~size:1.6 ~step:0.4
+    @ [ Draw.static ~layer:1 ~style:square_style
+          (P.Polygon [ o; e1; P.add e1 e2; e2 ]) ]
+  in
+  let scene = Draw.create camera entities in
+  let overlay =
+    Vg.Picture.group
+      [ arrow2d ~color:red ~width:2.8 camera o e3
+      ; label ~color:red ~size:15. ~dx:8. ~dy:6. camera e3 "e3"
+      ; label ~color:(Gg.Color.v 0.18 0.24 0.55) ~size:13. ~dx:(-24.) ~dy:(-6.)
+          camera (P.scale (P.add e1 e2) 0.5) "B = e12  (grade 2)"
+      ; label ~color:red ~size:12. ~dx:8. ~dy:(-20.) camera (p3 0. 0. 0.62)
+          "B* = e3  (grade 1)"
+      ; label ~color:muted ~size:12. ~dx:16. ~dy:6. camera (p3 1.12 1.12 0.02)
+          "B* = B I^(-1)"
+      ]
+  in
+  save "dual-complement" (Vg.Picture.group [ scene_picture scene; overlay ]);
+  Printf.printf "  dual e12                       [%s]\n"
+    (String.concat "; "
+       (List.map (Printf.sprintf "%.4g")
+          (Array.to_list
+             (Nx.to_array (E3.dual (E3.op E3.e1 E3.e2))))))
+
+(* ─── Figure 12: four conformal constructions ─── *)
+
+let save_page name ~width ~height picture =
+  let frame = Frame.create ~density:1.4 ~width ~height picture in
+  Frame.save_svg frame (Filename.concat out_dir (name ^ ".svg"));
+  Printf.printf "wrote %s/%s.svg\n%!" out_dir name
+
+let clip_tile ~w ~h picture =
+  Vg.Picture.clip (Gg.Path.rect (Gg.Box2.v 0. 0. w h)) picture
+
+let tile ~w ~h col row picture =
+  let picture = clip_tile ~w ~h picture in
+  Vg.Picture.transform
+    (Gg.Affine.translate (float col *. w) (float row *. h))
+    picture
+
+let figure_construction () =
+  let tw = 600. and th = 450. in
+  let caption s =
+    label2d ~color:ink ~size:20. ~x:22. ~y:34. s
+  in
+  (* (a) two points -> point pair *)
+  let tile_pair () =
+    let camera =
+      C.create ~eye:(p3 0.85 (-1.55) 0.95) ~target:(p3 0. 0. 0.38)
+        ~up:(p3 0. 0. 1.) ~fov_y:(Float.pi /. 4.6) ~width:tw ~height:th ()
+    in
+    let a = p3 (-0.7) 0. 0.38 and b = p3 0.7 0. 0.38 in
+    let style =
+      { Draw.fill = None
+      ; stroke = Some violet
+      ; width = 3.2
+      ; dash = []
+      ; opacity = 1.
+      }
+    in
+    let entities =
+      [ ground ~size:1.5 (ground_style ~alpha:0.03 ()) ]
+      @ grid ~layer:0 ~size:1.3 ~step:0.35
+      @ [ Draw.static ~layer:2 ~style (P.Segment (a, b)) ]
+    in
+    let scene = Draw.create camera entities in
+    let overlay =
+      Vg.Picture.group
+        [ disc ~color:ink ~radius:4.5 camera a
+        ; disc ~color:ink ~radius:4.5 camera b
+        ; label ~color:ink ~size:17. ~dx:(-8.) ~dy:26. camera a "X1"
+        ; label ~color:ink ~size:17. ~dx:8. ~dy:26. camera b "X2"
+        ; label2d ~color:violet ~size:16. ~x:80. ~y:330.
+            "P = X1 ^ X2  (grade 2, direct)"
+        ]
+    in
+    Vg.Picture.group
+      [ scene_picture scene; overlay
+      ; caption "2 points -> a point pair"
+      ]
+  in
+  (* (b) three points -> circle *)
+  let tile_circle () =
+    let camera =
+      C.create ~eye:(p3 2.35 (-2.5) 2.1) ~target:(p3 0. 0. 0.75)
+        ~up:(p3 0. 0. 1.) ~fov_y:(Float.pi /. 4.7) ~width:tw ~height:th ()
+    in
+    let normal = P.normalize (p3 0.3 0.2 1.) in
+    let u = P.normalize (P.cross normal (p3 0. 1. 0.)) in
+    let v = P.cross normal u in
+    let c = p3 0. 0. 0.8 and r = 0.85 in
+    let at t =
+      P.add c (P.add (P.scale u (r *. Float.cos t)) (P.scale v (r *. Float.sin t)))
+    in
+    let pts = [ at (Float.pi /. 2.); at ((Float.pi /. 2.) +. (2. *. Float.pi /. 3.))
+              ; at ((Float.pi /. 2.) +. (4. *. Float.pi /. 3.)) ] in
+    let cp (q : P.p3) = Cga.point3 q.P.x q.P.y q.P.z in
+    let z = Cga.circle (cp (List.nth pts 0)) (cp (List.nth pts 1)) (cp (List.nth pts 2)) in
+    let entities =
+      [ ground ~size:1.5 (ground_style ~alpha:0.03 ()) ]
+      @ grid ~layer:0 ~size:1.3 ~step:0.35
+      @ [ Draw.static ~layer:1
+            ~style:{ Draw.fill = Some (Gg.Color.v ~alpha:0.10 0.75 0.45 0.10)
+                   ; stroke = Some (Gg.Color.v ~alpha:0.55 0.50 0.30 0.05)
+                   ; width = 1.0; dash = []; opacity = 1. }
+            (P.Polygon pts)
+        ; Draw.static ~layer:3 ~style:(Draw.outline ~width:2.8 amber)
+            (P.of_cga_circle z)
+        ]
+    in
+    let scene = Draw.create camera entities in
+    let overlay =
+      Vg.Picture.group
+        (List.mapi
+           (fun i pt ->
+              Vg.Picture.group
+                [ ring ~color:amber ~radius:4.6 camera pt
+                ; label ~color:ink ~size:17. ~dx:10. ~dy:(-4.) camera pt
+                    (Printf.sprintf "X%d" (i + 1))
+                ])
+           pts
+         @ [ label2d ~color:amber ~size:16. ~x:220. ~y:410.
+               "z = (X1 ^ X2 ^ X3)*  (grade 2)"
+           ])
+    in
+    Vg.Picture.group [ scene_picture scene; overlay; caption "3 points -> a circle" ]
+  in
+  (* (c) four points -> sphere *)
+  let tile_sphere () =
+    let camera =
+      C.create ~eye:(p3 2.5 (-2.9) 1.8) ~target:(p3 0. 0. 0.55)
+        ~up:(p3 0. 0. 1.) ~fov_y:(Float.pi /. 4.8) ~width:tw ~height:th ()
+    in
+    let centre = p3 0. 0. 0.6 and r = 0.55 in
+    let dirs =
+      [ p3 1. 0. 0.4; p3 (-1.) 0.1 0.3; p3 0.1 1. 0.2; p3 0.2 (-0.9) 0.5 ]
+    in
+    let pts =
+      List.map
+        (fun d ->
+           let d = P.normalize d in
+           P.add centre (P.scale d r))
+        dirs
+    in
+    let cp (q : P.p3) = Cga.point3 q.P.x q.P.y q.P.z in
+    let s =
+      Cga.sphere_through (cp (List.nth pts 0)) (cp (List.nth pts 1))
+        (cp (List.nth pts 2)) (cp (List.nth pts 3))
+    in
+    let entities =
+      [ ground ~size:1.5 (ground_style ~alpha:0.03 ()) ]
+      @ grid ~layer:0 ~size:1.3 ~step:0.35
+      @ [ Draw.static ~layer:1
+            ~style:{ Draw.fill = Some (Gg.Color.v ~alpha:0.16 0.05 0.45 0.55)
+                   ; stroke = Some (Gg.Color.v ~alpha:0.55 0.05 0.45 0.55)
+                   ; width = 1.2; dash = []; opacity = 1. }
+            (P.of_cga_sphere s)
+        ]
+    in
+    let scene = Draw.create camera entities in
+    let overlay =
+      Vg.Picture.group
+        (List.mapi
+           (fun i pt ->
+              Vg.Picture.group
+                [ ring ~color:teal ~radius:4.6 camera pt
+                ; label ~color:ink ~size:17. ~dx:8. ~dy:(-6.) camera pt
+                    (Printf.sprintf "X%d" (i + 1))
+                ])
+           pts
+         @ [ label2d ~color:teal ~size:16. ~x:26. ~y:414.
+               "S = (X1^X2^X3^X4)*  (grade 1)"
+           ])
+    in
+    Vg.Picture.group [ scene_picture scene; overlay; caption "4 points -> a sphere" ]
+  in
+  (* (d) three points + einf -> plane *)
+  let tile_plane () =
+    let camera =
+      C.create ~eye:(p3 1.85 (-2.3) 2.0) ~target:(p3 0.3 0.3 0.55)
+        ~up:(p3 0. 0. 1.) ~fov_y:(Float.pi /. 4.7) ~width:tw ~height:th ()
+    in
+    let pts = [ p3 0. 0. 0.6; p3 1.25 0. 0.6; p3 0. 1.25 0.6 ] in
+    let cp (q : P.p3) = Cga.point3 q.P.x q.P.y q.P.z in
+    let pi =
+      Cga.plane_through (cp (List.nth pts 0)) (cp (List.nth pts 1))
+        (cp (List.nth pts 2))
+    in
+    let patch =
+      [ p3 (-0.5) (-0.5) 0.6; p3 1.7 (-0.5) 0.6
+      ; p3 1.7 1.7 0.6; p3 (-0.5) 1.7 0.6
+      ]
+    in
+    let entities =
+      [ ground ~size:1.5 (ground_style ~alpha:0.03 ()) ]
+      @ grid ~layer:0 ~size:1.3 ~step:0.35
+      @ [ Draw.static ~layer:1
+            ~style:{ Draw.fill = Some (Gg.Color.v ~alpha:0.13 0.55 0.30 0.25)
+                   ; stroke = Some (Gg.Color.v ~alpha:0.55 0.10 0.35 0.55)
+                   ; width = 1.2; dash = []; opacity = 1. }
+            (with_patch patch (P.of_cga_plane pi))
+        ]
+    in
+    let scene = Draw.create camera entities in
+    let overlay =
+      Vg.Picture.group
+        (List.mapi
+           (fun i pt ->
+              Vg.Picture.group
+                [ disc ~color:ink ~radius:4.2 camera pt
+                ; label ~color:ink ~size:17. ~dx:8. ~dy:(-6.) camera pt
+                    (Printf.sprintf "X%d" (i + 1))
+                ])
+           pts
+         @ [ label2d ~color:(Gg.Color.v 0.10 0.35 0.22) ~size:16. ~x:220. ~y:414.
+               "pi = (X1^X2^X3^e_inf)*  (grade 1)"
+           ])
+    in
+    Vg.Picture.group
+      [ scene_picture scene; overlay; caption "3 points + e_inf -> a plane" ]
+  in
+  let tiles = [ tile_pair (); tile_circle (); tile_sphere (); tile_plane () ] in
+  let placed =
+    List.concat
+      (List.mapi
+         (fun i t ->
+            let col = i mod 2 and row = i / 2 in
+            [ tile ~w:tw ~h:th col row t ])
+         tiles)
+  in
+  let rules =
+    Vg.Picture.group
+      [ line2d ~color:(Gg.Color.gray ~alpha:0.25 0.5) ~width:0.8
+          (tw, 10.) (tw, (2. *. th) -. 10.)
+      ; line2d ~color:(Gg.Color.gray ~alpha:0.25 0.5) ~width:0.8
+          (10., th) ((2. *. tw) -. 10., th)
+      ]
+  in
+  save_page "object-construction" ~width:(2. *. tw) ~height:(2. *. th)
+    (Vg.Picture.group (rules :: placed))
+
+(* ─── Figure 13: round versus flat ─── *)
+
+let figure_round_flat () =
+  let camera =
+    C.create ~eye:(p3 2.8 (-3.3) 2.35) ~target:(p3 0. 0. 0.62)
+      ~up:(p3 0. 0. 1.) ~fov_y:(Float.pi /. 4.9) ~width ~height ()
+  in
+  let s = Cga.sphere ~center:(v3 0. 0. 0.62) ~radius:(sc 0.58) in
+  let pi = Cga.plane ~normal:(v3 0. 0. 1.) ~offset:(sc 0.) in
+  let patch =
+    [ p3 (-1.6) (-1.6) 0.; p3 1.6 (-1.6) 0.
+    ; p3 1.6 1.6 0.; p3 (-1.6) 1.6 0.
+    ]
+  in
+  let entities =
+    [ Draw.static ~layer:0
+        ~style:{ Draw.fill = Some (Gg.Color.v ~alpha:0.08 0.55 0.45 0.18)
+               ; stroke = Some (Gg.Color.v ~alpha:0.35 0.20 0.45 0.45)
+               ; width = 1.0; dash = []; opacity = 1. }
+        (with_patch patch (P.of_cga_plane pi))
+    ; Draw.static ~layer:1
+        ~style:{ Draw.fill = Some (Gg.Color.v ~alpha:0.22 0.05 0.40 0.60)
+               ; stroke = Some teal
+               ; width = 1.4; dash = []; opacity = 1. }
+        (P.of_cga_sphere s)
+    ]
+  in
+  let scene = Draw.create camera entities in
+  let overlay =
+    Vg.Picture.group
+      [ label ~color:teal ~size:13. ~dx:10. ~dy:(-16.) camera (p3 0. 0. 1.32)
+          "S : e_inf . S = -1  (round)"
+      ; label ~color:(Gg.Color.v 0.18 0.35 0.28) ~size:13. ~dx:(-34.) ~dy:24.
+          camera (p3 (-1.15) (-1.15) 0.01) "pi : e_inf . pi = 0  (flat)"
+      ; disc ~color:ink ~radius:3.2 camera (p3 0. 0. 0.62)
+      ]
+  in
+  save "round-flat" (Vg.Picture.group [ scene_picture scene; overlay ]);
+  Printf.printf "  einf . sphere / einf . plane    %.4g / %.4g\n"
+    (item (Cga.scalar_prod Cga.einf s))
+    (item (Cga.scalar_prod Cga.einf (Cga.normalize_plane pi)))
+
+(* ─── Figure 14: the three cases of exp(B) ─── *)
+
+let figure_exp_cases () =
+  let tw = 400. and th = 450. in
+  let axes ox oy sx sy =
+    Vg.Picture.group
+      [ line2d ~color:(Gg.Color.gray ~alpha:0.55 0.5) ~width:1.0
+          (ox -. sx, oy) (ox +. sx, oy)
+      ; line2d ~color:(Gg.Color.gray ~alpha:0.55 0.5) ~width:1.0
+          (ox, oy -. sy) (ox, oy +. sy)
+      ]
+  in
+  let caption x y s = label2d ~color:ink ~size:19. ~x ~y s in
+  let note x y s = label2d ~color:muted ~size:15. ~x ~y s in
+  (* elliptic: a circle *)
+  let elliptic () =
+    let ox = 200. and oy = 285. and r = 105. in
+    let at a = (ox +. (r *. Float.cos a), oy -. (r *. Float.sin a)) in
+    let curve =
+      List.init 97 (fun i ->
+        let a = 2. *. Float.pi *. float_of_int i /. 96. in
+        at a)
+    in
+    let xs = Array.of_list (List.map fst curve)
+    and ys = Array.of_list (List.map snd curve) in
+    let points = List.map at [ 0.; Float.pi /. 4.; Float.pi /. 2.; 3. *. Float.pi /. 4. ] in
+    Vg.Picture.group
+      ([ axes ox oy 150. 150.
+       ; Vg.Picture.stroke (Gg.Stroke.v 2.2) blue (Gg.Path.polyline xs ys)
+       ; caption 118. 42. "B^2 = -theta^2"
+       ; note 150. 64. "rotation"
+       ]
+       @ List.map (fun p -> dot2d ~color:blue p) points
+       @ [ ring2d ~color:blue ~radius:7. (at (Float.pi /. 2.))
+         ; label2d ~color:ink ~size:15. ~x:(ox +. 10.) ~y:(oy +. 22.) "x"
+         ; label2d ~color:ink ~size:15. ~x:(ox -. 30.) ~y:(oy -. r -. 12.) "R x"
+         ])
+  in
+  (* hyperbolic: a boost branch *)
+  let hyperbolic () =
+    let ox = 160. and oy = 285. and sx = 70. and sy = 70. in
+    let to_page x y = (ox +. (sx *. x), oy -. (sy *. y)) in
+    let curve =
+      List.init 97 (fun i ->
+        let t = -1.3 +. (2.6 *. float_of_int i /. 96.) in
+        to_page (Float.cosh t) (Float.sinh t))
+    in
+    let xs = Array.of_list (List.map fst curve)
+    and ys = Array.of_list (List.map snd curve) in
+    let points = List.map (fun t -> to_page (Float.cosh t) (Float.sinh t)) [ 0.; 0.6; 1.1 ] in
+    Vg.Picture.group
+      ([ axes ox oy 130. 150.
+       ; Vg.Picture.stroke (Gg.Stroke.v 2.2) green (Gg.Path.polyline xs ys)
+       ; caption 118. 42. "B^2 = +theta^2"
+       ; note 150. 64. "boost (dilation)"
+       ]
+       @ List.map (fun p -> dot2d ~color:green p) points
+       @ [ label2d ~color:ink ~size:15. ~x:(ox -. 14.) ~y:(oy +. 22.) "1"
+         ; label2d ~color:ink ~size:15. ~x:(ox -. 26.) ~y:(oy -. 128.) "B"
+         ])
+  in
+  (* parabolic: equal steps along a line *)
+  let parabolic () =
+    let ox = 80. and oy = 285. and sx = 90. in
+    let pts = [ 0.; 1.; 2. ] in
+    let at t = (ox +. (sx *. t), oy) in
+    Vg.Picture.group
+      ([ axes ox oy 150. 150.
+       ; line2d ~color:amber ~width:2.6 (at 0.) (at 2.)
+       ; caption 118. 42. "B^2 = 0"
+       ; note 150. 64. "translation (1 + B)"
+       ]
+       @ List.map (fun t -> dot2d ~color:amber (at t)) pts
+       @ [ label2d ~color:ink ~size:15. ~x:(fst (at 0.) -. 8.) ~y:(oy +. 24.) "x"
+         ; label2d ~color:ink ~size:15. ~x:(fst (at 1.) -. 24.) ~y:(oy +. 24.) "x + t"
+         ; label2d ~color:ink ~size:15. ~x:(fst (at 2.) -. 34.) ~y:(oy +. 24.) "x + 2t"
+         ])
+  in
+  let ts = [ elliptic (); hyperbolic (); parabolic () ] in
+  let placed =
+    List.concat
+      (List.mapi (fun i t -> [ tile ~w:tw ~h:th i 0 t ]) ts)
+  in
+  let rules =
+    Vg.Picture.group
+      [ line2d ~color:(Gg.Color.gray ~alpha:0.25 0.5) ~width:0.8
+          (tw, 10.) (tw, th -. 10.)
+      ; line2d ~color:(Gg.Color.gray ~alpha:0.25 0.5) ~width:0.8
+          (2. *. tw, 10.) (2. *. tw, th -. 10.)
+      ]
+  in
+  let page =
+    Vg.Picture.fill (Gg.Color.v 0.98 0.98 0.98)
+      (Gg.Path.rect (Gg.Box2.v 0. 0. (3. *. tw) th))
+  in
+  save_page "exp-three-cases" ~width:(3. *. tw) ~height:th
+    (Vg.Picture.group (page :: rules :: placed))
+
+(* ─── Figure 15: one sandwich transforms every object ─── *)
+
+let figure_sandwich () =
+  let camera =
+    C.create ~eye:(p3 4.1 (-5.4) 3.5) ~target:(p3 1.35 0. 0.55)
+      ~up:(p3 0. 0. 1.) ~fov_y:(Float.pi /. 4.9) ~width ~height ()
+  in
+  let motor =
+    Motor.mul (Motor.translate3 2.6 0. 0.)
+      (Motor.rotate ~axis:(v3 0. 0. 1.) ~angle:(sc (Float.pi /. 6.)))
+  in
+  let point = Cga.point3 0.6 0. 0.4 in
+  let sphere = Cga.sphere ~center:(v3 0. 0. 0.95) ~radius:(sc 0.42) in
+  let circle =
+    Cga.circle (Cga.point3 0.7 0. 0.) (Cga.point3 0. 0.7 0.) (Cga.point3 (-0.7) 0. 0.)
+  in
+  let line_a = Cga.point3 1.05 0. 0.12
+  and line_b = Cga.point3 (-1.05) 0. 0.12 in
+  let plane = Cga.plane ~normal:(v3 0. 0. 1.) ~offset:(sc 0.) in
+  let patch =
+    [ p3 (-1.15) (-1.15) 0.; p3 1.15 (-1.15) 0.
+    ; p3 1.15 1.15 0.; p3 (-1.15) 1.15 0.
+    ]
+  in
+  let ghost =
+    { Draw.fill = None
+    ; stroke = Some (Gg.Color.gray ~alpha:0.32 0.55)
+    ; width = 1.1
+    ; dash = [ 4.; 4. ]
+    ; opacity = 1.
+    }
+  in
+  let ghost_fill alpha =
+    { Draw.fill = Some (Gg.Color.v ~alpha 0.45 0.50 0.58)
+    ; stroke = Some (Gg.Color.v ~alpha:0.30 0.45 0.50 0.58)
+    ; width = 1.0
+    ; dash = [ 4.; 4. ]
+    ; opacity = 1.
+    }
+  in
+  let draw_obj ~layer ~ghost_obj obj =
+    match obj with
+    | `Point p -> [ Draw.static ~layer ~style:ghost (P.of_cga_point p) ]
+    | `Sphere s ->
+      [ Draw.static ~layer
+          ~style:(if ghost_obj then ghost_fill 0.08
+                  else { Draw.fill = Some (Gg.Color.v ~alpha:0.24 0.05 0.40 0.60)
+                       ; stroke = Some teal; width = 1.4
+                       ; dash = []; opacity = 1. })
+          (P.of_cga_sphere s) ]
+    | `Circle z ->
+      [ Draw.static ~layer
+          ~style:(if ghost_obj then ghost
+                  else Draw.outline ~width:2.4 amber)
+          (P.of_cga_circle z) ]
+    | `Segment (a, b) ->
+      [ Draw.static ~layer
+          ~style:(if ghost_obj then ghost
+                  else Draw.outline ~width:2.4 red)
+          (P.Segment (p3_of_cga a, p3_of_cga b)) ]
+    | `Plane pi ->
+      [ Draw.static ~layer
+          ~style:(if ghost_obj then ghost_fill 0.04
+                  else { Draw.fill = Some (Gg.Color.v ~alpha:0.06 0.30 0.55 0.18)
+                       ; stroke = Some (Gg.Color.v ~alpha:0.40 0.15 0.35 0.45)
+                       ; width = 1.0; dash = []; opacity = 1. })
+          (with_patch patch (P.of_cga_plane pi)) ]
+  in
+  let objs =
+    [ `Point point; `Sphere sphere; `Circle circle
+    ; `Segment (line_a, line_b); `Plane plane ]
+  in
+  let original =
+    List.concat
+      (List.map
+         (fun o ->
+            draw_obj ~layer:(match o with `Plane _ -> 0 | _ -> 1) ~ghost_obj:true o)
+         objs)
+  in
+  let moved =
+    List.concat
+      (List.map
+         (fun o ->
+            let o' =
+              match o with
+              | `Point p -> `Point (Cga.apply_motor motor p)
+              | `Sphere s -> `Sphere (Cga.apply_motor motor s)
+              | `Circle z -> `Circle (Cga.apply_motor motor z)
+              | `Segment (a, b) ->
+                `Segment (Cga.apply_motor motor a, Cga.apply_motor motor b)
+              | `Plane pi -> `Plane (Cga.apply_motor motor pi)
+            in
+            draw_obj ~layer:(match o' with `Plane _ -> 2 | _ -> 3) ~ghost_obj:false o')
+         objs)
+  in
+  let frame_at m =
+    let origin = p3_of (Motor.translation m) in
+    let r = rotation_rows m in
+    let axis i =
+      let (x, _, _) = r.(i) in
+      let (_, y, _) = r.(i) in
+      let (_, _, z) = r.(i) in
+      p3 x y z
+    in
+    P.Frame
+      { origin
+      ; x = P.add origin (P.scale (axis 0) 0.3)
+      ; y = P.add origin (P.scale (axis 1) 0.3)
+      ; z = P.add origin (P.scale (axis 2) 0.3)
+      }
+  in
+  let entities =
+    original @ moved
+    @ [ Draw.static ~layer:4 ~style:Draw.default (frame_at Motor.one)
+      ; Draw.static ~layer:4 ~style:Draw.default (frame_at motor)
+      ]
+  in
+  let scene = Draw.create camera entities in
+  let src = p3_of_cga point
+  and dst = p3_of_cga (Cga.apply_motor motor point) in
+  let overlay =
+    Vg.Picture.group
+      [ polyline3 ~color:violet ~width:1.5 ~dash:[ 5.; 4. ] camera [ src; dst ]
+      ; ring ~color:violet ~radius:5.0 ~width:1.8 camera src
+      ; ring ~color:violet ~radius:5.0 ~width:1.8 camera dst
+      ; label ~color:violet ~size:13. ~dx:12. ~dy:6. camera dst
+          "X  ->  M X M~"
+      ; label ~color:muted ~size:12. ~dx:(-30.) ~dy:28. camera (p3 (-1.15) (-1.15) 0.02)
+          "dashed: before"
+      ; label ~color:muted ~size:12. ~dx:10. ~dy:28. camera (p3 1.5 (-1.15) 0.02)
+          "solid: after one sandwich"
+      ; label ~color:ink ~size:12. ~dx:8. ~dy:22. camera (p3_of (Motor.translation motor))
+          "M"
+      ]
+  in
+  save "sandwich-uniform" (Vg.Picture.group [ scene_picture scene; overlay ]);
+  Printf.printf "  sandwich point                 [%s]\n"
+    (String.concat "; "
+       (List.map (Printf.sprintf "%.4g")
+          (Array.to_list
+             (Nx.to_array (Cga.coords (Cga.apply_motor motor point))))))
+
 (* ─── numerical checks quoted by the notes ─── *)
 
 let checks () =
@@ -933,4 +1610,11 @@ let () =
   figure_slerp ();
   figure_fk ();
   figure_camera ();
-  figure_parabola ()
+  figure_parabola ();
+  figure_grades ();
+  figure_contraction ();
+  figure_dual ();
+  figure_construction ();
+  figure_round_flat ();
+  figure_exp_cases ();
+  figure_sandwich ()

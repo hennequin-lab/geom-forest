@@ -2,14 +2,15 @@
 id = "a7e0caa1"
 title = "The even subalgebra holds the rotations"
 created = 2026-11-17T18:19:22Z
-updated = 2026-11-17T18:22:27Z
+updated = 2026-11-19T09:48:03Z
 tags = ["ga/foundation"]
 aliases = ["even subalgebra"]
 +++
 
-The even-grade elements of a Clifford algebra close under multiplication, so
-they form a subalgebra of dimension $2^(n-1)$. It contains the scalars and the
-bivectors, hence the [[0aa35a84|exponentials of bivectors]], hence all
+The even-grade elements of an $n$-dimensional Clifford algebra close under
+multiplication, so they form a subalgebra of dimension $2^(n-1)$: half of the
+$2^n$ basis blades have an even number of factors. It contains the scalars and
+the bivectors, hence the [[0aa35a84|exponentials of bivectors]], hence all
 [[b1f5db79|rotors]]: every rotation is an even versor.
 
 Two instances are worth memorising:

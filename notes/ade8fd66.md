@@ -2,7 +2,7 @@
 id = "ade8fd66"
 title = "The camera projects by a PGA meet"
 created = 2026-11-17T18:19:22Z
-updated = 2026-11-17T18:22:27Z
+updated = 2026-11-19T10:10:06Z
 tags = ["ga/viz"]
 aliases = ["camera", "projection"]
 +++
@@ -12,12 +12,14 @@ The camera is not a 4×4 matrix. It is a set of projective objects:
 - `Camera.view c` is the motor carrying world points into camera coordinates;
 - `Camera.eye_point c` is the world-space eye, as a `Pga.t` point;
 - `Camera.image_plane c` is the world-space image plane $z = -f$, as a
-  `Pga.t` plane;
+  `Pga.t` plane, where $f$ is the focal length;
 - a view ray is the `Pga` line through the eye and the page point, and the
   projection of a world point is the **meet** of that ray with the image plane.
 
 The meet performs the perspective division: the coordinates of the resulting
-point are the image coordinates. That is the whole projection.
+point are the image coordinates. In the closed form, with camera-space
+coordinates $(x, y, z)$ of a point and focal length $f$, those coordinates are
+$f x slash (-z)$ and $f y slash (-z)$. That is the whole projection.
 
 ```ocaml
 open Geom

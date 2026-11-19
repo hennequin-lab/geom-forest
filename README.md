@@ -1,6 +1,6 @@
 # Geometric algebra for robotics — a forest
 
-An [EG](https://github.com/hennequi-lab/eg) vault of 78 densely inter-linked
+An [EG](https://github.com/hennequi-lab/eg) vault of 79 densely inter-linked
 atomic notes on geometric algebra, written around the `geom` library in
 `murder/packages/geom` and its renderer `geom-viz`. Every code sample is a
 snippet of that library, and every figure was drawn by `geom-viz` from the very
@@ -40,7 +40,7 @@ Two hub notes (the map and four reading paths) and five clusters:
 | software and numerics | `ga/computing` | `The last axis is the blade axis` |
 | pictures | `ga/viz` | `The geom-viz rendering model` |
 
-78 notes, ~480 wikilinks, every note has at least one inbound link and most
+79 notes, over 500 wikilinks, every note has at least one inbound link and most
 have five or more. `eg check` reports 0 broken links and 0 orphans.
 
 ## Editing
@@ -82,4 +82,4 @@ of a point, the ScLERP midpoint, the forward-kinematics end effector, …). See
 
 The builder **inlines** each SVG into the note body, so the page carries its own
 drawing and `eg build` alone shows it — there is no asset copy to forget. All
-eight are collected on the note **Gallery of figures**.
+fifteen are collected on the note **Gallery of figures**.

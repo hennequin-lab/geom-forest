@@ -2,7 +2,7 @@
 id = "db8d2e5e"
 title = "The adjoint turns a sandwich into a matrix"
 created = 2026-11-17T18:19:22Z
-updated = 2026-11-17T18:22:27Z
+updated = 2026-11-19T09:54:06Z
 tags = ["ga/motion"]
 aliases = ["adjoint"]
 +++
@@ -26,7 +26,8 @@ Two uses. The first is composition of many motions applied to many points: a
 $32 times 32$ matrix times a batch of 32-vectors is one `dot`, which is often
 faster than a batched sandwich. The second is the Lie-theoretic one: the
 adjoint carries twists (and, dually, wrenches) between frames, and the adjoint
-of a composition is the product of the adjoints, $op("Ad")(M_1 M_2) = op("Ad")(M_1) op("Ad")(M_2)$.
+of a composition is the product of the adjoints,
+$op("Ad")(M_1 M_2) = op("Ad")(M_1) op("Ad")(M_2)$.
 
 The dense adjoint is also the cleanest test of the sandwich implementation:
 apply the sandwich to each basis blade, stack the results, and compare with the

@@ -2,7 +2,7 @@
 id = "0eba01dd"
 title = "Four reading paths through the forest"
 created = 2026-11-17T18:19:22Z
-updated = 2026-11-17T18:22:27Z
+updated = 2026-11-19T10:08:48Z
 tags = ["map"]
 aliases = ["reading paths"]
 +++
@@ -46,7 +46,7 @@ comparison with matrices, quaternions and dual quaternions, and
 
 ## Where the pictures are
 
-[[68469ff7|The gallery]] collects all eight figures in one page.
+[[68469ff7|The gallery]] collects all fifteen figures in one page.
 [[b8a939ad|The geom-viz rendering model]] explains the renderer, [[ade8fd66|The camera projects by a PGA meet]] the camera, and
 [[7c7870c2|Adapters from algebra objects to primitives]] the three lines of code that turn a conformal sphere into a
 drawable primitive.
